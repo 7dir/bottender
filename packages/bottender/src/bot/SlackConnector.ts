@@ -9,9 +9,10 @@ import Session from '../session/Session';
 import SlackContext from '../context/SlackContext';
 import SlackEvent, {
   EventAPITypes,
-  InteractiveMessageEvent,
-  Message,
   SlackRawEvent,
+  Message,
+  InteractiveMessageEvent,
+  SlashCommandEvent,
 } from '../context/SlackEvent';
 
 import { Connector } from './Connector';
@@ -93,8 +94,7 @@ export default class SlackConnector
     if (body.payload && typeof body.payload === 'string') {
       return JSON.parse(body.payload) as InteractiveMessageEvent;
     }
-
-    // for RTM WebSocket messages
+    // for RTM WebSocket messages and Slach Command messages
     return (body as any) as Message;
   }
 
@@ -141,7 +141,11 @@ export default class SlackConnector
       return rawEvent.item.channel;
     }
 
-    return (rawEvent as Message).channel;
+    if (rawEvent.type === 'interactive_message') {
+      return (rawEvent as InteractiveMessageEvent).channelId;
+    }
+
+    return (rawEvent as Message).channel || (rawEvent as SlashCommandEvent).channelId;
   }
 
   async updateSession(session: Session, body: SlackRequestBody): Promise<void> {
@@ -152,9 +156,9 @@ export default class SlackConnector
     const rawEvent = this._getRawEventFromRequest(body);
     let userFromBody;
     if (rawEvent.type === 'interactive_message') {
-      userFromBody = rawEvent.user.id;
+      userFromBody = ((rawEvent: any): InteractiveMessageEvent).user.id;
     } else {
-      userFromBody = (rawEvent as Message).user;
+      userFromBody = (rawEvent as Message).user || (rawEvent as SlashCommandEvent).userId;
     }
 
     if (

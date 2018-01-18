@@ -3,7 +3,7 @@ import warning from 'warning';
 import { SlackOAuthClient, SlackTypes } from 'messaging-api-slack';
 
 import Context from './Context';
-import SlackEvent from './SlackEvent';
+import SlackEvent, { Message } from './SlackEvent';
 import { PlatformContext } from './PlatformContext';
 
 export default class SlackContext extends Context<SlackOAuthClient, SlackEvent>
